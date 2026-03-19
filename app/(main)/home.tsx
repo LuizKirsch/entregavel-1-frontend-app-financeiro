@@ -186,8 +186,10 @@ function ExpenseRow({
   value,
   tag,
 }: ExpenseRowProps) {
+  const router = useRouter();
   return (
     <Pressable
+      onPress={() => router.push({ pathname: "/edit", params: { title, category, value, tag } } as Href)}
       style={({ pressed }) => [styles.expenseRow, pressed && styles.rowPressed]}
     >
       <View style={styles.expenseLeft}>
