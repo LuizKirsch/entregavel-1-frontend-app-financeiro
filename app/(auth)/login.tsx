@@ -1,5 +1,7 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { Glass } from "@/constants/theme";
+import { AnimatedOrb } from "@/components/animated-orb";
+import { BlurView } from "expo-blur";
 import { type Href, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
@@ -9,9 +11,9 @@ export default function LoginScreen() {
   return (
     <View style={styles.screen}>
       {/* Background orbs */}
-      <View style={styles.orb1} />
-      <View style={styles.orb2} />
-      <View style={styles.orb3} />
+      <AnimatedOrb size={320} color="rgba(124,58,237,0.35)" top={-100} left={-80} delay={0} />
+      <AnimatedOrb size={260} color="rgba(167,139,250,0.2)" top={180} right={-100} delay={800} />
+      <AnimatedOrb size={200} color="rgba(52,211,153,0.12)" bottom={60} left={40} delay={1600} />
 
       <View style={styles.container}>
         <View style={styles.brandSection}>
@@ -24,7 +26,7 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        <View style={styles.formCard}>
+        <BlurView intensity={50} tint="dark" style={styles.formCard}>
           <View style={styles.inputBlock}>
             <Text style={styles.label}>E-MAIL</Text>
             <TextInput
@@ -58,7 +60,7 @@ export default function LoginScreen() {
             <Text style={styles.primaryButtonText}>Entrar</Text>
             <MaterialIcons name="arrow-forward" size={20} color="#FFF" />
           </Pressable>
-        </View>
+        </BlurView>
       </View>
     </View>
   );
@@ -66,33 +68,7 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Glass.bgDark },
-  orb1: {
-    position: "absolute",
-    width: 320,
-    height: 320,
-    borderRadius: 999,
-    backgroundColor: "rgba(124,58,237,0.35)",
-    top: -100,
-    left: -80,
-  },
-  orb2: {
-    position: "absolute",
-    width: 260,
-    height: 260,
-    borderRadius: 999,
-    backgroundColor: "rgba(167,139,250,0.2)",
-    top: 180,
-    right: -100,
-  },
-  orb3: {
-    position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 999,
-    backgroundColor: "rgba(52,211,153,0.12)",
-    bottom: 60,
-    left: 40,
-  },
+
   container: {
     flex: 1,
     justifyContent: "center",
@@ -104,7 +80,7 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 24,
-    backgroundColor: Glass.surface,
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: Glass.borderStrong,
     alignItems: "center",
@@ -131,12 +107,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   formCard: {
-    backgroundColor: Glass.surface,
     borderRadius: 24,
     borderWidth: 1,
     borderColor: Glass.border,
     padding: 24,
     gap: 20,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,

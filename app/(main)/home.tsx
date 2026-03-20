@@ -1,6 +1,8 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { SummaryCard } from "@/components/summary-card";
 import { Glass } from "@/constants/theme";
+import { AnimatedOrb } from "@/components/animated-orb";
+import { BlurView } from "expo-blur";
 import { api, type Transaction, type TransactionStatus } from "@/services/api";
 import { type Href, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -88,12 +90,12 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.orb1} />
-      <View style={styles.orb2} />
-      <View style={styles.orb3} />
+      <AnimatedOrb size={300} color="rgba(124,58,237,0.3)" top={-80} right={-60} delay={0} />
+      <AnimatedOrb size={240} color="rgba(52,211,153,0.1)" top={300} left={-80} delay={1000} />
+      <AnimatedOrb size={200} color="rgba(167,139,250,0.12)" bottom={100} right={-40} delay={500} />
 
       {/* Month selector */}
-      <View style={styles.periodBar}>
+      <BlurView intensity={40} tint="dark" style={styles.periodBar}>
         <Pressable
           onPress={() => setMonth(prevMonth(month))}
           style={({ pressed }) => [styles.arrowBtn, pressed && { opacity: 0.6 }]}
@@ -107,7 +109,7 @@ export default function HomeScreen() {
         >
           <MaterialIcons name="chevron-right" size={22} color={Glass.accent} />
         </Pressable>
-      </View>
+      </BlurView>
 
       {loading ? (
         <ActivityIndicator style={{ flex: 1 }} color={Glass.accent} />
@@ -176,7 +178,7 @@ export default function HomeScreen() {
         </ScrollView>
       )}
 
-      <View style={styles.bottomNavWrap}>
+      <BlurView intensity={60} tint="dark" style={styles.bottomNavWrap}>
         <Pressable style={styles.navButtonActive}>
           <MaterialIcons name="home" size={22} color={Glass.accent} />
           <Text style={styles.navTextActive}>Inicio</Text>
@@ -188,7 +190,7 @@ export default function HomeScreen() {
           <MaterialIcons name="add-circle" size={22} color={Glass.textSecondary} />
           <Text style={styles.navText}>Adicionar</Text>
         </Pressable>
-      </View>
+      </BlurView>
     </SafeAreaView>
   );
 }
@@ -224,76 +226,52 @@ function TransactionRow({
   return (
     <Pressable
       onPress={onEdit}
-      style={({ pressed }) => [styles.expenseRow, pressed && { opacity: 0.7 }]}
+      style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
     >
-      <View style={styles.expenseLeft}>
-        <View style={[styles.expenseIconWrap, {
-          backgroundColor: t.type === "entrada" ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)",
-          borderColor: t.type === "entrada" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)",
-        }]}>
-          <MaterialIcons
-            name={t.type === "entrada" ? "arrow-downward" : "arrow-upward"}
-            size={20}
-            color={t.type === "entrada" ? Glass.income : Glass.expense}
-          />
+      <BlurView intensity={30} tint="dark" style={styles.expenseRow}>
+        <View style={styles.expenseLeft}>
+          <View style={[styles.expenseIconWrap, {
+            backgroundColor: t.type === "entrada" ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)",
+            borderColor: t.type === "entrada" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)",
+          }]}>
+            <MaterialIcons
+              name={t.type === "entrada" ? "arrow-downward" : "arrow-upward"}
+              size={20}
+              color={t.type === "entrada" ? Glass.income : Glass.expense}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.expenseTitle} numberOfLines={1}>{t.description}</Text>
+            <Text style={styles.expenseCategory}>{t.month}</Text>
+          </View>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.expenseTitle} numberOfLines={1}>{t.description}</Text>
-          <Text style={styles.expenseCategory}>{t.month}</Text>
-        </View>
-      </View>
 
-      <View style={styles.expenseRight}>
-        <Text style={[styles.expenseValue, { color: t.type === "entrada" ? Glass.income : Glass.expense }]}>
-          {t.type === "entrada" ? "+" : "-"}{fmtAmount(t.amount)}
-        </Text>
-        <View style={styles.rowActions}>
-          <Pressable
-            onPress={(e) => { e.stopPropagation(); onUpdateStatus(nextStatus); }}
-            style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[t.status] + "22", borderColor: STATUS_COLORS[t.status] + "44" }]}
-          >
-            <Text style={[styles.statusText, { color: STATUS_COLORS[t.status] }]}>
-              {STATUS_LABELS[t.status]}
-            </Text>
-          </Pressable>
-          <Pressable onPress={(e) => { e.stopPropagation(); onDelete(); }} style={styles.deleteBtn}>
-            <MaterialIcons name="delete-outline" size={18} color={Glass.expense} />
-          </Pressable>
+        <View style={styles.expenseRight}>
+          <Text style={[styles.expenseValue, { color: t.type === "entrada" ? Glass.income : Glass.expense }]}>
+            {t.type === "entrada" ? "+" : "-"}{fmtAmount(t.amount)}
+          </Text>
+          <View style={styles.rowActions}>
+            <Pressable
+              onPress={(e) => { e.stopPropagation(); onUpdateStatus(nextStatus); }}
+              style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[t.status] + "22", borderColor: STATUS_COLORS[t.status] + "44" }]}
+            >
+              <Text style={[styles.statusText, { color: STATUS_COLORS[t.status] }]}>
+                {STATUS_LABELS[t.status]}
+              </Text>
+            </Pressable>
+            <Pressable onPress={(e) => { e.stopPropagation(); onDelete(); }} style={styles.deleteBtn}>
+              <MaterialIcons name="delete-outline" size={18} color={Glass.expense} />
+            </Pressable>
+          </View>
         </View>
-      </View>
+      </BlurView>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Glass.bgDark },
-  orb1: {
-    position: "absolute",
-    width: 300,
-    height: 300,
-    borderRadius: 999,
-    backgroundColor: "rgba(124,58,237,0.3)",
-    top: -80,
-    right: -60,
-  },
-  orb2: {
-    position: "absolute",
-    width: 240,
-    height: 240,
-    borderRadius: 999,
-    backgroundColor: "rgba(52,211,153,0.1)",
-    top: 300,
-    left: -80,
-  },
-  orb3: {
-    position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 999,
-    backgroundColor: "rgba(167,139,250,0.12)",
-    bottom: 100,
-    right: -40,
-  },
+
   contentContainer: {
     paddingHorizontal: 20,
     paddingTop: 20,
@@ -307,7 +285,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     paddingTop: 50,
-    backgroundColor: "rgba(15,10,30,0.6)",
+    overflow: "hidden",
     borderBottomWidth: 1,
     borderBottomColor: Glass.border,
   },
@@ -359,7 +337,6 @@ const styles = StyleSheet.create({
   sectionTitle: { color: Glass.textPrimary, fontSize: 18, fontWeight: "700" },
   sectionTotal: { fontSize: 13, fontWeight: "600" },
   expenseRow: {
-    backgroundColor: Glass.surface,
     borderRadius: 18,
     padding: 14,
     flexDirection: "row",
@@ -368,11 +345,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: Glass.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
+    overflow: "hidden",
   },
   expenseLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
   expenseIconWrap: {
@@ -402,7 +375,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(15,10,30,0.85)",
+    overflow: "hidden",
     borderTopWidth: 1,
     borderTopColor: Glass.border,
     paddingTop: 12,

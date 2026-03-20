@@ -1,23 +1,23 @@
+import { BlurView } from "expo-blur";
 import { Glass } from "@/constants/theme";
 import { StyleSheet, View, type ViewProps } from "react-native";
 
 export function SummaryCard({ children, style }: ViewProps) {
   return (
-    <View style={[styles.card, style]}>
+    <BlurView intensity={55} tint="dark" style={[styles.card, style]}>
       <View style={styles.orb1} />
       <View style={styles.orb2} />
       {children}
-    </View>
+    </BlurView>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Glass.surfaceStrong,
     borderRadius: 24,
-    padding: 22,
     borderWidth: 1,
     borderColor: Glass.borderStrong,
+    padding: 22,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },

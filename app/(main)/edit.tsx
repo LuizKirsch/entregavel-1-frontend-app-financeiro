@@ -2,6 +2,8 @@ import { SummaryCard } from "@/components/summary-card";
 import { MonthPicker } from "@/components/month-picker";
 import { Glass } from "@/constants/theme";
 import { api, type TransactionStatus, type TransactionType } from "@/services/api";
+import { BlurView } from "expo-blur";
+import { AnimatedOrb } from "@/components/animated-orb";
 import { MaterialIcons } from "@expo/vector-icons";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -117,8 +119,8 @@ export default function EditScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.orb1} />
-      <View style={styles.orb2} />
+      <AnimatedOrb size={280} color="rgba(124,58,237,0.28)" top={-60} right={-60} delay={0} />
+      <AnimatedOrb size={200} color="rgba(52,211,153,0.1)" bottom={120} left={-40} delay={900} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
@@ -126,7 +128,7 @@ export default function EditScreen() {
           <Text style={styles.pageSubtitle}>Atualize as informações da transação selecionada.</Text>
         </View>
 
-        <View style={styles.card}>
+        <BlurView intensity={45} tint="dark" style={styles.card}>
           <SummaryCard style={styles.amountCard}>
             <Text style={styles.label}>Valor</Text>
             <View style={styles.amountWrap}>
@@ -208,10 +210,10 @@ export default function EditScreen() {
               <Text style={styles.btnCancelText}>Cancelar</Text>
             </Pressable>
           </View>
-        </View>
+        </BlurView>
       </ScrollView>
 
-      <View style={styles.bottomNav}>
+      <BlurView intensity={60} tint="dark" style={styles.bottomNav}>
         <Pressable style={styles.navBtn} onPress={() => router.push("/home" as Href)}>
           <MaterialIcons name="home" size={22} color={Glass.textSecondary} />
           <Text style={styles.navText}>Início</Text>
@@ -220,42 +222,25 @@ export default function EditScreen() {
           <MaterialIcons name="add-circle" size={22} color={Glass.accent} />
           <Text style={styles.navTextActive}>Editar</Text>
         </Pressable>
-      </View>
+      </BlurView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Glass.bgDark },
-  orb1: {
-    position: "absolute",
-    width: 280,
-    height: 280,
-    borderRadius: 999,
-    backgroundColor: "rgba(124,58,237,0.28)",
-    top: -60,
-    right: -60,
-  },
-  orb2: {
-    position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 999,
-    backgroundColor: "rgba(52,211,153,0.1)",
-    bottom: 120,
-    left: -40,
-  },
+
   content: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 130, gap: 20 },
   header: { gap: 6 },
   pageTitle: { fontSize: 32, fontWeight: "800", color: Glass.textPrimary },
   pageSubtitle: { fontSize: 14, color: Glass.textSecondary },
   card: {
-    backgroundColor: Glass.surface,
     borderRadius: 24,
     padding: 24,
     gap: 22,
     borderWidth: 1,
     borderColor: Glass.border,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
@@ -338,7 +323,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(15,10,30,0.85)",
+    overflow: "hidden",
     borderTopWidth: 1,
     borderTopColor: Glass.border,
     paddingTop: 12,

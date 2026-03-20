@@ -1,17 +1,28 @@
+import { BlurView } from "expo-blur";
 import { Glass } from "@/constants/theme";
-import { StyleSheet, View, type ViewProps } from "react-native";
+import { StyleSheet, type ViewProps } from "react-native";
 
-export function GlassView({ children, style }: ViewProps) {
-  return <View style={[styles.glass, style]}>{children}</View>;
+type Props = ViewProps & { intensity?: number };
+
+export function GlassView({ children, style, intensity = 40 }: Props) {
+  return (
+    <BlurView
+      intensity={intensity}
+      tint="dark"
+      style={[styles.glass, style]}
+    >
+      {children}
+    </BlurView>
+  );
 }
 
 const styles = StyleSheet.create({
   glass: {
-    backgroundColor: Glass.surface,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: Glass.border,
     padding: 20,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
