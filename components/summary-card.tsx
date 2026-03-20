@@ -1,9 +1,11 @@
+import { Glass } from "@/constants/theme";
 import { StyleSheet, View, type ViewProps } from "react-native";
 
 export function SummaryCard({ children, style }: ViewProps) {
   return (
     <View style={[styles.card, style]}>
-      <View style={styles.glow} />
+      <View style={styles.orb1} />
+      <View style={styles.orb2} />
       {children}
     </View>
   );
@@ -11,19 +13,34 @@ export function SummaryCard({ children, style }: ViewProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
+    backgroundColor: Glass.surfaceStrong,
+    borderRadius: 24,
     padding: 22,
+    borderWidth: 1,
+    borderColor: Glass.borderStrong,
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
   },
-  glow: {
+  orb1: {
     position: "absolute",
-    width: 220,
-    height: 220,
+    width: 180,
+    height: 180,
     borderRadius: 999,
-    backgroundColor: "#EADDFF",
-    opacity: 0.35,
-    top: -90,
-    right: -70,
+    backgroundColor: "rgba(167,139,250,0.15)",
+    top: -60,
+    right: -40,
+  },
+  orb2: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 999,
+    backgroundColor: "rgba(52,211,153,0.08)",
+    bottom: -30,
+    left: -20,
   },
 });
