@@ -1,8 +1,10 @@
 import { SummaryCard } from "@/components/summary-card";
+import { api, type TransactionStatus, type TransactionType } from "@/services/api";
 import { MaterialIcons } from "@expo/vector-icons";
-import { type Href, useRouter } from "expo-router";
+import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  Alert,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -12,6 +14,7 @@ import {
   View,
 } from "react-native";
 import MaskInput, { createNumberMask } from "react-native-mask-input";
+import { MonthPicker } from "@/components/month-picker";
 
 const currencyMask = createNumberMask({
   prefix: [],
@@ -20,21 +23,56 @@ const currencyMask = createNumberMask({
   precision: 2,
 });
 
-const CATEGORIES = ["Alimentação", "Transporte", "Lazer", "Saúde", "Outros"];
-const PAYMENTS: {
-  label: string;
-  icon: React.ComponentProps<typeof MaterialIcons>["name"];
-}[] = [
-  { label: "Cartão", icon: "credit-card" },
-  { label: "Dinheiro", icon: "payments" },
-  { label: "PIX", icon: "account-balance-wallet" },
+function currentMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+const TYPES: { label: string; value: TransactionType }[] = [
+  { label: "Entrada", value: "entrada" },
+  { label: "Saída", value: "saida" },
+];
+
+const STATUSES: { label: string; value: TransactionStatus }[] = [
+  { label: "Pendente", value: "pendente" },
+  { label: "Pago", value: "pago" },
+  { label: "Recebido", value: "recebido" },
 ];
 
 export default function CreateScreen() {
   const router = useRouter();
+  const { user } = useLocalSearchParams<{ user: string }>();
   const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
-  const [payment, setPayment] = useState("PIX");
+  const [description, setDescription] = useState("");
+  const [type, setType] = useState<TransactionType>("saida");
+  const [status, setStatus] = useState<TransactionStatus>("pendente");
+  const [month, setMonth] = useState(currentMonth());
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    const numericAmount = parseFloat(
+      amount.replace(/\./g, "").replace(",", ".")
+    );
+    if (!description.trim() || isNaN(numericAmount) || numericAmount <= 0) {
+      Alert.alert("Erro", "Preencha todos os campos corretamente.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.createTransaction(user ?? "alice", {
+        description: description.trim(),
+        amount: numericAmount,
+        type,
+        status,
+        month,
+      });
+      router.push("/home" as Href);
+    } catch (err: any) {
+      Alert.alert("Erro", err?.message ?? "Não foi possível salvar.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -43,16 +81,16 @@ export default function CreateScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.editorialHeader}>
-          <Text style={styles.pageTitle}>Nova Despesa</Text>
+          <Text style={styles.pageTitle}>Nova Transação</Text>
           <Text style={styles.pageSubtitle}>
-            Registre seus gastos para manter sua saúde financeira em dia.
+            Registre uma entrada ou saída financeira.
           </Text>
         </View>
 
         <View style={styles.card}>
           {/* Valor */}
           <SummaryCard style={styles.amountCard}>
-            <Text style={styles.label}>Valor do Gasto</Text>
+            <Text style={styles.label}>Valor</Text>
             <View style={styles.amountWrap}>
               <Text style={styles.currencySymbol}>R$</Text>
               <MaskInput
@@ -72,95 +110,70 @@ export default function CreateScreen() {
             <Text style={styles.label}>Descrição</Text>
             <TextInput
               style={styles.input}
-              placeholder="Ex: Almoço Executivo"
+              placeholder="Ex: Salário Mensal"
               placeholderTextColor="#79747E"
+              value={description}
+              onChangeText={setDescription}
             />
           </View>
 
-          <View style={styles.row}>
-            {/* Categoria */}
-            <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>Categoria</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.chipRow}>
-                  {CATEGORIES.map((c) => (
-                    <Pressable
-                      key={c}
-                      onPress={() => setCategory(c)}
-                      style={[styles.chip, category === c && styles.chipActive]}
-                    >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          category === c && styles.chipTextActive,
-                        ]}
-                      >
-                        {c}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-          </View>
-
-          {/* Data */}
+          {/* Tipo */}
           <View style={styles.field}>
-            <Text style={styles.label}>Data</Text>
-            <View style={styles.inputIconWrap}>
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="DD/MM/AAAA"
-                placeholderTextColor="#79747E"
-                keyboardType="numeric"
-              />
-              <MaterialIcons
-                name="calendar-today"
-                size={20}
-                color="#625B71"
-                style={styles.inputIcon}
-              />
-            </View>
-          </View>
-
-          {/* Forma de Pagamento */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Forma de Pagamento</Text>
-            <View style={styles.paymentRow}>
-              {PAYMENTS.map((p) => (
+            <Text style={styles.label}>Tipo</Text>
+            <View style={styles.chipRow}>
+              {TYPES.map((t) => (
                 <Pressable
-                  key={p.label}
-                  onPress={() => setPayment(p.label)}
-                  style={[
-                    styles.paymentCard,
-                    payment === p.label && styles.paymentCardActive,
-                  ]}
+                  key={t.value}
+                  onPress={() => setType(t.value)}
+                  style={[styles.chip, type === t.value && styles.chipActive]}
                 >
-                  <MaterialIcons
-                    name={p.icon}
-                    size={22}
-                    color={payment === p.label ? "#6200EE" : "#625B71"}
-                  />
                   <Text
                     style={[
-                      styles.paymentLabel,
-                      payment === p.label && styles.paymentLabelActive,
+                      styles.chipText,
+                      type === t.value && styles.chipTextActive,
                     ]}
                   >
-                    {p.label}
+                    {t.label}
                   </Text>
                 </Pressable>
               ))}
             </View>
           </View>
 
-          {/* Botões */}
+          {/* Status */}
+          <View style={styles.field}>
+            <Text style={styles.label}>Status</Text>
+            <View style={styles.chipRow}>
+              {STATUSES.map((s) => (
+                <Pressable
+                  key={s.value}
+                  onPress={() => setStatus(s.value)}
+                  style={[styles.chip, status === s.value && styles.chipActive]}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      status === s.value && styles.chipTextActive,
+                    ]}
+                  >
+                    {s.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <MonthPicker value={month} onChange={setMonth} />
+
           <View style={styles.actions}>
             <Pressable
-              style={styles.btnSave}
-              onPress={() => router.push("/home" as Href)}
+              style={[styles.btnSave, saving && { opacity: 0.6 }]}
+              onPress={handleSave}
+              disabled={saving}
             >
-              <Text style={styles.btnSaveText}>Salvar Despesa</Text>
+              <Text style={styles.btnSaveText}>
+                {saving ? "Salvando..." : "Salvar Transação"}
+              </Text>
             </Pressable>
             <Pressable style={styles.btnCancel} onPress={() => router.back()}>
               <Text style={styles.btnCancelText}>Cancelar</Text>
@@ -188,52 +201,15 @@ export default function CreateScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#FAFAFA" },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: "rgba(255,255,255,0.85)",
-    borderBottomWidth: 1,
-    borderBottomColor: "#EFE8F4",
-  },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 999,
-    backgroundColor: "#F3E5F5",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: "#4800B2" },
-  headerBtn: { padding: 6 },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 28,
-    paddingBottom: 130,
-    gap: 20,
-  },
+  content: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 130, gap: 20 },
   editorialHeader: { gap: 6 },
   pageTitle: { fontSize: 34, fontWeight: "800", color: "#1C1B1F" },
   pageSubtitle: { fontSize: 14, color: "#625B71" },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 24,
-    gap: 22,
-  },
+  card: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 24, gap: 22 },
   field: { gap: 8 },
   label: { fontSize: 13, fontWeight: "600", color: "#625B71" },
-  amountCard: {
-    backgroundColor: "#FDFBFF",
-    gap: 8,
-  },
-  amountWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+  amountCard: { backgroundColor: "#FDFBFF", gap: 8 },
+  amountWrap: { flexDirection: "row", alignItems: "center" },
   currencySymbol: { fontSize: 22, fontWeight: "800", color: "#6200EE" },
   amountInput: {
     flex: 1,
@@ -251,40 +227,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#1C1B1F",
   },
-  inputIconWrap: { flexDirection: "row", alignItems: "center" },
-  inputIcon: { position: "absolute", right: 14 },
-  row: { gap: 16 },
-  chipRow: { flexDirection: "row", gap: 8 },
+  chipRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   chip: {
     backgroundColor: "#F7F2FA",
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  chipActive: {
-    backgroundColor: "#F3E5F5",
-    borderWidth: 1.5,
-    borderColor: "#6200EE",
-  },
+  chipActive: { backgroundColor: "#F3E5F5", borderWidth: 1.5, borderColor: "#6200EE" },
   chipText: { fontSize: 13, color: "#625B71", fontWeight: "500" },
   chipTextActive: { color: "#6200EE", fontWeight: "700" },
-  paymentRow: { flexDirection: "row", gap: 10 },
-  paymentCard: {
-    flex: 1,
-    backgroundColor: "#F7F2FA",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  paymentCardActive: {
-    backgroundColor: "#F3E5F5",
-    borderColor: "#6200EE",
-  },
-  paymentLabel: { fontSize: 12, fontWeight: "600", color: "#625B71" },
-  paymentLabelActive: { color: "#6200EE" },
   actions: { gap: 12, paddingTop: 6 },
   btnSave: {
     backgroundColor: "#6200EE",
@@ -300,21 +252,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   btnCancelText: { color: "#625B71", fontSize: 16, fontWeight: "700" },
-  tipCard: {
-    backgroundColor: "#F3E5F5",
-    borderRadius: 16,
-    padding: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  tipIcon: {
-    backgroundColor: "rgba(255,255,255,0.6)",
-    borderRadius: 12,
-    padding: 10,
-  },
-  tipTitle: { fontSize: 16, fontWeight: "700", color: "#4800B2" },
-  tipText: { fontSize: 13, color: "#4800B2", opacity: 0.8, marginTop: 4 },
   bottomNav: {
     position: "absolute",
     bottom: 0,
