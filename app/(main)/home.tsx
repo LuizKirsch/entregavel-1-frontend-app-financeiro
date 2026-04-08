@@ -1,7 +1,12 @@
-import { MaterialIcons } from "@expo/vector-icons";
 import { SummaryCard } from "@/components/summary-card";
 import { Glass } from "@/constants/theme";
-import { api, type Transaction, type TransactionStatus } from "@/services/api";
+import {
+  api,
+  DEFAULT_USER,
+  type Transaction,
+  type TransactionStatus,
+} from "@/services/api";
+import { MaterialIcons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -15,7 +20,7 @@ import {
   View,
 } from "react-native";
 
-const USER = "alice";
+const USER = DEFAULT_USER;
 
 function fmtMonth(month: string) {
   const [year, m] = month.split("-");
@@ -59,10 +64,16 @@ export default function HomeScreen() {
       .finally(() => setLoading(false));
   }, [month]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const totalEntradas = transactions.filter((t) => t.type === "entrada").reduce((s, t) => s + t.amount, 0);
-  const totalSaidas = transactions.filter((t) => t.type === "saida").reduce((s, t) => s + t.amount, 0);
+  const totalEntradas = transactions
+    .filter((t) => t.type === "entrada")
+    .reduce((s, t) => s + t.amount, 0);
+  const totalSaidas = transactions
+    .filter((t) => t.type === "saida")
+    .reduce((s, t) => s + t.amount, 0);
   const saldo = totalEntradas - totalSaidas;
 
   function handleDelete(id: number) {
@@ -72,14 +83,18 @@ export default function HomeScreen() {
         text: "Deletar",
         style: "destructive",
         onPress: () =>
-          api.deleteTransaction(USER, id).then(load)
+          api
+            .deleteTransaction(USER, id)
+            .then(load)
             .catch(() => Alert.alert("Erro", "Não foi possível deletar.")),
       },
     ]);
   }
 
   function handleUpdateStatus(id: number, status: TransactionStatus) {
-    api.updateStatus(USER, id, status).then(load)
+    api
+      .updateStatus(USER, id, status)
+      .then(load)
       .catch(() => Alert.alert("Erro", "Não foi possível atualizar o status."));
   }
 
@@ -96,14 +111,20 @@ export default function HomeScreen() {
       <View style={styles.periodBar}>
         <Pressable
           onPress={() => setMonth(prevMonth(month))}
-          style={({ pressed }) => [styles.arrowBtn, pressed && { opacity: 0.6 }]}
+          style={({ pressed }) => [
+            styles.arrowBtn,
+            pressed && { opacity: 0.6 },
+          ]}
         >
           <MaterialIcons name="chevron-left" size={22} color={Glass.accent} />
         </Pressable>
         <Text style={styles.monthText}>{fmtMonth(month)}</Text>
         <Pressable
           onPress={() => setMonth(nextMonth(month))}
-          style={({ pressed }) => [styles.arrowBtn, pressed && { opacity: 0.6 }]}
+          style={({ pressed }) => [
+            styles.arrowBtn,
+            pressed && { opacity: 0.6 },
+          ]}
         >
           <MaterialIcons name="chevron-right" size={22} color={Glass.accent} />
         </Pressable>
@@ -112,23 +133,35 @@ export default function HomeScreen() {
       {loading ? (
         <ActivityIndicator style={{ flex: 1 }} color={Glass.accent} />
       ) : (
-        <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
           <SummaryCard>
             <View style={styles.summaryMain}>
               <View style={styles.summaryLeft}>
                 <Text style={styles.summaryCaption}>Saldo do Mês</Text>
-                <Text style={[styles.summaryValue, { color: saldo >= 0 ? Glass.income : Glass.expense }]}>
+                <Text
+                  style={[
+                    styles.summaryValue,
+                    { color: saldo >= 0 ? Glass.income : Glass.expense },
+                  ]}
+                >
                   {fmtAmount(saldo)}
                 </Text>
               </View>
               <View style={styles.summaryStats}>
                 <View style={styles.statCard}>
                   <Text style={styles.statLabel}>Entradas</Text>
-                  <Text style={[styles.statValue, { color: Glass.income }]}>{fmtAmount(totalEntradas)}</Text>
+                  <Text style={[styles.statValue, { color: Glass.income }]}>
+                    {fmtAmount(totalEntradas)}
+                  </Text>
                 </View>
                 <View style={styles.statCard}>
                   <Text style={styles.statLabel}>Saídas</Text>
-                  <Text style={[styles.statValue, { color: Glass.expense }]}>{fmtAmount(totalSaidas)}</Text>
+                  <Text style={[styles.statValue, { color: Glass.expense }]}>
+                    {fmtAmount(totalSaidas)}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -138,13 +171,20 @@ export default function HomeScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Entradas</Text>
-                <Text style={[styles.sectionTotal, { color: Glass.income }]}>{fmtAmount(totalEntradas)}</Text>
+                <Text style={[styles.sectionTotal, { color: Glass.income }]}>
+                  {fmtAmount(totalEntradas)}
+                </Text>
               </View>
               {entradas.map((t) => (
                 <TransactionRow
                   key={t.id}
                   transaction={t}
-                  onEdit={() => router.push({ pathname: "/edit", params: { id: t.id, user: USER } } as Href)}
+                  onEdit={() =>
+                    router.push({
+                      pathname: "/edit",
+                      params: { id: t.id, user: USER },
+                    } as Href)
+                  }
                   onDelete={() => handleDelete(t.id)}
                   onUpdateStatus={(s) => handleUpdateStatus(t.id, s)}
                 />
@@ -156,13 +196,20 @@ export default function HomeScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Saídas</Text>
-                <Text style={[styles.sectionTotal, { color: Glass.expense }]}>{fmtAmount(totalSaidas)}</Text>
+                <Text style={[styles.sectionTotal, { color: Glass.expense }]}>
+                  {fmtAmount(totalSaidas)}
+                </Text>
               </View>
               {saidas.map((t) => (
                 <TransactionRow
                   key={t.id}
                   transaction={t}
-                  onEdit={() => router.push({ pathname: "/edit", params: { id: t.id, user: USER } } as Href)}
+                  onEdit={() =>
+                    router.push({
+                      pathname: "/edit",
+                      params: { id: t.id, user: USER },
+                    } as Href)
+                  }
                   onDelete={() => handleDelete(t.id)}
                   onUpdateStatus={(s) => handleUpdateStatus(t.id, s)}
                 />
@@ -182,10 +229,19 @@ export default function HomeScreen() {
           <Text style={styles.navTextActive}>Inicio</Text>
         </Pressable>
         <Pressable
-          style={({ pressed }) => [styles.navButton, pressed && { opacity: 0.6 }]}
-          onPress={() => router.push({ pathname: "/create", params: { user: USER } } as Href)}
+          style={({ pressed }) => [
+            styles.navButton,
+            pressed && { opacity: 0.6 },
+          ]}
+          onPress={() =>
+            router.push({ pathname: "/create", params: { user: USER } } as Href)
+          }
         >
-          <MaterialIcons name="add-circle" size={22} color={Glass.textSecondary} />
+          <MaterialIcons
+            name="add-circle"
+            size={22}
+            color={Glass.textSecondary}
+          />
           <Text style={styles.navText}>Adicionar</Text>
         </Pressable>
       </View>
@@ -218,8 +274,12 @@ function TransactionRow({
 }) {
   const nextStatus: TransactionStatus =
     t.type === "entrada"
-      ? t.status === "recebido" ? "pendente" : "recebido"
-      : t.status === "pago" ? "pendente" : "pago";
+      ? t.status === "recebido"
+        ? "pendente"
+        : "recebido"
+      : t.status === "pago"
+        ? "pendente"
+        : "pago";
 
   return (
     <Pressable
@@ -227,10 +287,21 @@ function TransactionRow({
       style={({ pressed }) => [styles.expenseRow, pressed && { opacity: 0.7 }]}
     >
       <View style={styles.expenseLeft}>
-        <View style={[styles.expenseIconWrap, {
-          backgroundColor: t.type === "entrada" ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)",
-          borderColor: t.type === "entrada" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)",
-        }]}>
+        <View
+          style={[
+            styles.expenseIconWrap,
+            {
+              backgroundColor:
+                t.type === "entrada"
+                  ? "rgba(52,211,153,0.15)"
+                  : "rgba(248,113,113,0.15)",
+              borderColor:
+                t.type === "entrada"
+                  ? "rgba(52,211,153,0.3)"
+                  : "rgba(248,113,113,0.3)",
+            },
+          ]}
+        >
           <MaterialIcons
             name={t.type === "entrada" ? "arrow-downward" : "arrow-upward"}
             size={20}
@@ -238,26 +309,55 @@ function TransactionRow({
           />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.expenseTitle} numberOfLines={1}>{t.description}</Text>
+          <Text style={styles.expenseTitle} numberOfLines={1}>
+            {t.description}
+          </Text>
           <Text style={styles.expenseCategory}>{t.month}</Text>
         </View>
       </View>
 
       <View style={styles.expenseRight}>
-        <Text style={[styles.expenseValue, { color: t.type === "entrada" ? Glass.income : Glass.expense }]}>
-          {t.type === "entrada" ? "+" : "-"}{fmtAmount(t.amount)}
+        <Text
+          style={[
+            styles.expenseValue,
+            { color: t.type === "entrada" ? Glass.income : Glass.expense },
+          ]}
+        >
+          {t.type === "entrada" ? "+" : "-"}
+          {fmtAmount(t.amount)}
         </Text>
         <View style={styles.rowActions}>
           <Pressable
-            onPress={(e) => { e.stopPropagation(); onUpdateStatus(nextStatus); }}
-            style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[t.status] + "22", borderColor: STATUS_COLORS[t.status] + "44" }]}
+            onPress={(e) => {
+              e.stopPropagation();
+              onUpdateStatus(nextStatus);
+            }}
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor: STATUS_COLORS[t.status] + "22",
+                borderColor: STATUS_COLORS[t.status] + "44",
+              },
+            ]}
           >
-            <Text style={[styles.statusText, { color: STATUS_COLORS[t.status] }]}>
+            <Text
+              style={[styles.statusText, { color: STATUS_COLORS[t.status] }]}
+            >
               {STATUS_LABELS[t.status]}
             </Text>
           </Pressable>
-          <Pressable onPress={(e) => { e.stopPropagation(); onDelete(); }} style={styles.deleteBtn}>
-            <MaterialIcons name="delete-outline" size={18} color={Glass.expense} />
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            style={styles.deleteBtn}
+          >
+            <MaterialIcons
+              name="delete-outline"
+              size={18}
+              color={Glass.expense}
+            />
           </Pressable>
         </View>
       </View>
@@ -396,7 +496,12 @@ const styles = StyleSheet.create({
   },
   statusText: { fontSize: 10, fontWeight: "700", textTransform: "uppercase" },
   deleteBtn: { padding: 2 },
-  empty: { textAlign: "center", color: Glass.textSecondary, fontSize: 14, marginTop: 40 },
+  empty: {
+    textAlign: "center",
+    color: Glass.textSecondary,
+    fontSize: 14,
+    marginTop: 40,
+  },
   bottomNavWrap: {
     position: "absolute",
     bottom: 0,

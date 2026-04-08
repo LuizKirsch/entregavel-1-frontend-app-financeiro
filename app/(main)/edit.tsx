@@ -1,24 +1,34 @@
-import { SummaryCard } from "@/components/summary-card";
 import { MonthPicker } from "@/components/month-picker";
+import { SummaryCard } from "@/components/summary-card";
 import { Glass } from "@/constants/theme";
-import { api, type TransactionStatus, type TransactionType } from "@/services/api";
+import {
+    api,
+    DEFAULT_USER,
+    type TransactionStatus,
+    type TransactionType,
+} from "@/services/api";
 import { MaterialIcons } from "@expo/vector-icons";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 import MaskInput, { createNumberMask } from "react-native-mask-input";
 
-const currencyMask = createNumberMask({ prefix: [], delimiter: ".", separator: ",", precision: 2 });
+const currencyMask = createNumberMask({
+  prefix: [],
+  delimiter: ".",
+  separator: ",",
+  precision: 2,
+});
 
 const TYPES: { label: string; value: TransactionType }[] = [
   { label: "Entrada", value: "entrada" },
@@ -38,7 +48,7 @@ function toMasked(amount: number) {
 export default function EditScreen() {
   const router = useRouter();
   const { id, user } = useLocalSearchParams<{ id: string; user: string }>();
-  const resolvedUser = user ?? "alice";
+  const resolvedUser = user ?? DEFAULT_USER;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -50,9 +60,13 @@ export default function EditScreen() {
 
   useEffect(() => {
     if (!id) return;
-    api.getTransaction(resolvedUser, Number(id))
+    api
+      .getTransaction(resolvedUser, Number(id))
       .then((t) => {
-        if (!t) { router.back(); return; }
+        if (!t) {
+          router.back();
+          return;
+        }
         setAmount(toMasked(t.amount));
         setDescription(t.description);
         setType(t.type);
@@ -64,14 +78,22 @@ export default function EditScreen() {
   }, [id]);
 
   async function handleSave() {
-    const numericAmount = parseFloat(amount.replace(/\./g, "").replace(",", "."));
+    const numericAmount = parseFloat(
+      amount.replace(/\./g, "").replace(",", "."),
+    );
     if (!description.trim() || isNaN(numericAmount) || numericAmount <= 0) {
       Alert.alert("Erro", "Preencha todos os campos corretamente.");
       return;
     }
     setSaving(true);
     try {
-      await api.updateTransaction(resolvedUser, Number(id), { description: description.trim(), amount: numericAmount, type, status, month });
+      await api.updateTransaction(resolvedUser, Number(id), {
+        description: description.trim(),
+        amount: numericAmount,
+        type,
+        status,
+        month,
+      });
       router.push("/home" as Href);
     } catch (err: any) {
       Alert.alert("Erro", err?.message ?? "Não foi possível salvar.");
@@ -85,7 +107,10 @@ export default function EditScreen() {
       await api.updateStatus(resolvedUser, Number(id), newStatus);
       setStatus(newStatus);
     } catch (err: any) {
-      Alert.alert("Erro", err?.message ?? "Não foi possível atualizar o status.");
+      Alert.alert(
+        "Erro",
+        err?.message ?? "Não foi possível atualizar o status.",
+      );
     }
   }
 
@@ -120,10 +145,15 @@ export default function EditScreen() {
       <View style={styles.orb1} />
       <View style={styles.orb2} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.pageTitle}>Editar Transação</Text>
-          <Text style={styles.pageSubtitle}>Atualize as informações da transação selecionada.</Text>
+          <Text style={styles.pageSubtitle}>
+            Atualize as informações da transação selecionada.
+          </Text>
         </View>
 
         <View style={styles.card}>
@@ -163,7 +193,14 @@ export default function EditScreen() {
                   onPress={() => setType(t.value)}
                   style={[styles.chip, type === t.value && styles.chipActive]}
                 >
-                  <Text style={[styles.chipText, type === t.value && styles.chipTextActive]}>{t.label}</Text>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      type === t.value && styles.chipTextActive,
+                    ]}
+                  >
+                    {t.label}
+                  </Text>
                 </Pressable>
               ))}
             </View>
@@ -178,7 +215,14 @@ export default function EditScreen() {
                   onPress={() => handleUpdateStatus(s.value)}
                   style={[styles.chip, status === s.value && styles.chipActive]}
                 >
-                  <Text style={[styles.chipText, status === s.value && styles.chipTextActive]}>{s.label}</Text>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      status === s.value && styles.chipTextActive,
+                    ]}
+                  >
+                    {s.label}
+                  </Text>
                 </Pressable>
               ))}
             </View>
@@ -188,21 +232,36 @@ export default function EditScreen() {
 
           <View style={styles.actions}>
             <Pressable
-              style={({ pressed }) => [styles.btnSave, (saving || pressed) && { opacity: 0.75 }]}
+              style={({ pressed }) => [
+                styles.btnSave,
+                (saving || pressed) && { opacity: 0.75 },
+              ]}
               onPress={handleSave}
               disabled={saving}
             >
-              <Text style={styles.btnSaveText}>{saving ? "Salvando..." : "Salvar Alterações"}</Text>
+              <Text style={styles.btnSaveText}>
+                {saving ? "Salvando..." : "Salvar Alterações"}
+              </Text>
             </Pressable>
             <Pressable
-              style={({ pressed }) => [styles.btnDelete, pressed && { opacity: 0.7 }]}
+              style={({ pressed }) => [
+                styles.btnDelete,
+                pressed && { opacity: 0.7 },
+              ]}
               onPress={handleDelete}
             >
-              <MaterialIcons name="delete-outline" size={18} color={Glass.expense} />
+              <MaterialIcons
+                name="delete-outline"
+                size={18}
+                color={Glass.expense}
+              />
               <Text style={styles.btnDeleteText}>Deletar Transação</Text>
             </Pressable>
             <Pressable
-              style={({ pressed }) => [styles.btnCancel, pressed && { opacity: 0.7 }]}
+              style={({ pressed }) => [
+                styles.btnCancel,
+                pressed && { opacity: 0.7 },
+              ]}
               onPress={() => router.back()}
             >
               <Text style={styles.btnCancelText}>Cancelar</Text>
@@ -212,7 +271,10 @@ export default function EditScreen() {
       </ScrollView>
 
       <View style={styles.bottomNav}>
-        <Pressable style={styles.navBtn} onPress={() => router.push("/home" as Href)}>
+        <Pressable
+          style={styles.navBtn}
+          onPress={() => router.push("/home" as Href)}
+        >
           <MaterialIcons name="home" size={22} color={Glass.textSecondary} />
           <Text style={styles.navText}>Início</Text>
         </Pressable>
@@ -245,7 +307,12 @@ const styles = StyleSheet.create({
     bottom: 120,
     left: -40,
   },
-  content: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 130, gap: 20 },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 130,
+    gap: 20,
+  },
   header: { gap: 6 },
   pageTitle: { fontSize: 32, fontWeight: "800", color: Glass.textPrimary },
   pageSubtitle: { fontSize: 14, color: Glass.textSecondary },
@@ -294,7 +361,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Glass.border,
   },
-  chipActive: { backgroundColor: "rgba(167,139,250,0.2)", borderColor: Glass.accent },
+  chipActive: {
+    backgroundColor: "rgba(167,139,250,0.2)",
+    borderColor: Glass.accent,
+  },
   chipText: { fontSize: 13, color: Glass.textSecondary, fontWeight: "500" },
   chipTextActive: { color: Glass.accent, fontWeight: "700" },
   actions: { gap: 12, paddingTop: 6 },
@@ -332,7 +402,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Glass.border,
   },
-  btnCancelText: { color: Glass.textSecondary, fontSize: 16, fontWeight: "700" },
+  btnCancelText: {
+    color: Glass.textSecondary,
+    fontSize: 16,
+    fontWeight: "700",
+  },
   bottomNav: {
     position: "absolute",
     bottom: 0,
@@ -346,7 +420,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-evenly",
   },
-  navBtn: { alignItems: "center", justifyContent: "center", minWidth: 110, borderRadius: 16, paddingVertical: 10, gap: 2 },
+  navBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 110,
+    borderRadius: 16,
+    paddingVertical: 10,
+    gap: 2,
+  },
   navBtnActive: {
     alignItems: "center",
     justifyContent: "center",

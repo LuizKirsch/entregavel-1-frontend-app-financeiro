@@ -3,13 +3,69 @@ import type { Transaction, TransactionBody, TransactionStatus } from "./api";
 let nextId = 10;
 
 const store: Transaction[] = [
-  { id: 1, user: "alice", description: "Salário Mensal", amount: 4500.0, type: "entrada", status: "recebido", month: "2026-03" },
-  { id: 2, user: "alice", description: "Compra no Mercado", amount: 650.5, type: "saida", status: "pago", month: "2026-03" },
-  { id: 3, user: "alice", description: "Conta de Luz", amount: 180.0, type: "saida", status: "pendente", month: "2026-03" },
-  { id: 4, user: "alice", description: "Freelance Design", amount: 1200.0, type: "entrada", status: "recebido", month: "2026-03" },
-  { id: 5, user: "alice", description: "Spotify Premium", amount: 21.9, type: "saida", status: "pago", month: "2026-03" },
-  { id: 6, user: "alice", description: "Aluguel", amount: 1500.0, type: "saida", status: "pendente", month: "2026-04" },
-  { id: 7, user: "alice", description: "Salário Mensal", amount: 4500.0, type: "entrada", status: "pendente", month: "2026-04" },
+  {
+    id: 1,
+    user: "lucas",
+    description: "Salário Mensal",
+    amount: 4500.0,
+    type: "entrada",
+    status: "recebido",
+    month: "2026-03",
+  },
+  {
+    id: 2,
+    user: "lucas",
+    description: "Compra no Mercado",
+    amount: 650.5,
+    type: "saida",
+    status: "pago",
+    month: "2026-03",
+  },
+  {
+    id: 3,
+    user: "lucas",
+    description: "Conta de Luz",
+    amount: 180.0,
+    type: "saida",
+    status: "pendente",
+    month: "2026-03",
+  },
+  {
+    id: 4,
+    user: "lucas",
+    description: "Freelance Design",
+    amount: 1200.0,
+    type: "entrada",
+    status: "recebido",
+    month: "2026-03",
+  },
+  {
+    id: 5,
+    user: "lucas",
+    description: "Spotify Premium",
+    amount: 21.9,
+    type: "saida",
+    status: "pago",
+    month: "2026-03",
+  },
+  {
+    id: 6,
+    user: "lucas",
+    description: "Aluguel",
+    amount: 1500.0,
+    type: "saida",
+    status: "pendente",
+    month: "2026-04",
+  },
+  {
+    id: 7,
+    user: "lucas",
+    description: "Salário Mensal",
+    amount: 4500.0,
+    type: "entrada",
+    status: "pendente",
+    month: "2026-04",
+  },
 ];
 
 function delay<T>(value: T): Promise<T> {
@@ -19,7 +75,7 @@ function delay<T>(value: T): Promise<T> {
 export const mockApi = {
   listTransactions: (user: string, month?: string) => {
     const result = store.filter(
-      (t) => t.user === user && (!month || t.month === month)
+      (t) => t.user === user && (!month || t.month === month),
     );
     return delay([...result]);
   },
@@ -37,7 +93,8 @@ export const mockApi = {
 
   updateTransaction: (user: string, id: number, body: TransactionBody) => {
     const idx = store.findIndex((t) => t.id === id && t.user === user);
-    if (idx === -1) return Promise.reject({ message: "Transação não encontrada." });
+    if (idx === -1)
+      return Promise.reject({ message: "Transação não encontrada." });
     store[idx] = { id, user, ...body };
     return delay({ ...store[idx] });
   },
@@ -51,7 +108,8 @@ export const mockApi = {
 
   deleteTransaction: (user: string, id: number) => {
     const idx = store.findIndex((t) => t.id === id && t.user === user);
-    if (idx === -1) return Promise.reject({ message: "Transação não encontrada." });
+    if (idx === -1)
+      return Promise.reject({ message: "Transação não encontrada." });
     const [deleted] = store.splice(idx, 1);
     return delay({ ...deleted });
   },

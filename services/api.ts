@@ -1,8 +1,9 @@
 import { mockApi } from "./api.mock";
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://controle-financeiro-nine-mu.vercel.app";
 
-const USE_MOCK = true;
+const USE_MOCK = false;
+export const DEFAULT_USER = "lucas";
 
 export type TransactionType = "entrada" | "saida";
 export type TransactionStatus = "pendente" | "pago" | "recebido";
