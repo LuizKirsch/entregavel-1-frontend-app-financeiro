@@ -1,10 +1,12 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { SummaryCard } from "@/components/summary-card";
+import { Glass } from "@/constants/theme";
+import { api, type Transaction, type TransactionStatus } from "@/services/api";
 import { type Href, useRouter } from "expo-router";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  Platform,
+  ActivityIndicator,
+  Alert,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -13,153 +15,177 @@ import {
   View,
 } from "react-native";
 
-function fmt(d: Date) {
-  return d.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+const USER = "alice";
+
+function fmtMonth(month: string) {
+  const [year, m] = month.split("-");
+  const date = new Date(Number(year), Number(m) - 1, 1);
+  return date.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+}
+
+function fmtAmount(amount: number) {
+  return amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function prevMonth(month: string) {
+  const [y, m] = month.split("-").map(Number);
+  const d = new Date(y, m - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function nextMonth(month: string) {
+  const [y, m] = month.split("-").map(Number);
+  const d = new Date(y, m, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function currentMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [startDate, setStartDate] = useState(new Date(2024, 9, 1));
-  const [endDate, setEndDate] = useState(new Date(2024, 9, 31));
-  const [picker, setPicker] = useState<"start" | "end" | null>(null);
+  const [month, setMonth] = useState(currentMonth());
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    api
+      .listTransactions(USER, month)
+      .then(setTransactions)
+      .catch(() => setTransactions([]))
+      .finally(() => setLoading(false));
+  }, [month]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const totalEntradas = transactions.filter((t) => t.type === "entrada").reduce((s, t) => s + t.amount, 0);
+  const totalSaidas = transactions.filter((t) => t.type === "saida").reduce((s, t) => s + t.amount, 0);
+  const saldo = totalEntradas - totalSaidas;
+
+  function handleDelete(id: number) {
+    Alert.alert("Deletar", "Tem certeza?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Deletar",
+        style: "destructive",
+        onPress: () =>
+          api.deleteTransaction(USER, id).then(load)
+            .catch(() => Alert.alert("Erro", "Não foi possível deletar.")),
+      },
+    ]);
+  }
+
+  function handleUpdateStatus(id: number, status: TransactionStatus) {
+    api.updateStatus(USER, id, status).then(load)
+      .catch(() => Alert.alert("Erro", "Não foi possível atualizar o status."));
+  }
+
+  const entradas = transactions.filter((t) => t.type === "entrada");
+  const saidas = transactions.filter((t) => t.type === "saida");
 
   return (
     <SafeAreaView style={styles.screen}>
+      <View style={styles.orb1} />
+      <View style={styles.orb2} />
+      <View style={styles.orb3} />
+
+      {/* Month selector */}
       <View style={styles.periodBar}>
-        <MaterialIcons name="date-range" size={18} color="#6200EE" />
-        <Pressable onPress={() => setPicker("start")} style={styles.dateBtn}>
-          <Text style={styles.dateBtnText}>{fmt(startDate)}</Text>
+        <Pressable
+          onPress={() => setMonth(prevMonth(month))}
+          style={({ pressed }) => [styles.arrowBtn, pressed && { opacity: 0.6 }]}
+        >
+          <MaterialIcons name="chevron-left" size={22} color={Glass.accent} />
         </Pressable>
-        <Text style={styles.dateSep}>→</Text>
-        <Pressable onPress={() => setPicker("end")} style={styles.dateBtn}>
-          <Text style={styles.dateBtnText}>{fmt(endDate)}</Text>
+        <Text style={styles.monthText}>{fmtMonth(month)}</Text>
+        <Pressable
+          onPress={() => setMonth(nextMonth(month))}
+          style={({ pressed }) => [styles.arrowBtn, pressed && { opacity: 0.6 }]}
+        >
+          <MaterialIcons name="chevron-right" size={22} color={Glass.accent} />
         </Pressable>
       </View>
 
-      {picker !== null && (
-        <DateTimePicker
-          value={picker === "start" ? startDate : endDate}
-          mode="date"
-          display={Platform.OS === "ios" ? "inline" : "default"}
-          onChange={(_, date) => {
-            if (date)
-              picker === "start" ? setStartDate(date) : setEndDate(date);
-            if (Platform.OS !== "ios") setPicker(null);
-          }}
-          onTouchCancel={() => setPicker(null)}
-        />
-      )}
-
-      <ScrollView
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        <SummaryCard>
-          <View style={styles.summaryMain}>
-            <View style={styles.summaryLeft}>
-              <Text style={styles.summaryCaption}>Total Gasto em Outubro</Text>
-              <View style={styles.summaryValueRow}>
-                <Text style={styles.summaryValueMain}>R$ 2.450</Text>
-                <Text style={styles.summaryValueCents}>,80</Text>
-              </View>
-              <View style={styles.progressWrap}>
-                <View style={styles.progressTrack}>
-                  <View style={styles.progressFill} />
-                </View>
-                <Text style={styles.progressText}>72%</Text>
-              </View>
-            </View>
-            <View style={styles.summaryStats}>
-              <View style={styles.statCard}>
-                <Text style={styles.statLabel}>Orcamento</Text>
-                <Text style={styles.statValue}>R$ 3.400,00</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statLabel}>Disponivel</Text>
-                <Text style={[styles.statValue, styles.statValuePositive]}>
-                  R$ 949,20
+      {loading ? (
+        <ActivityIndicator style={{ flex: 1 }} color={Glass.accent} />
+      ) : (
+        <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+          <SummaryCard>
+            <View style={styles.summaryMain}>
+              <View style={styles.summaryLeft}>
+                <Text style={styles.summaryCaption}>Saldo do Mês</Text>
+                <Text style={[styles.summaryValue, { color: saldo >= 0 ? Glass.income : Glass.expense }]}>
+                  {fmtAmount(saldo)}
                 </Text>
               </View>
+              <View style={styles.summaryStats}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>Entradas</Text>
+                  <Text style={[styles.statValue, { color: Glass.income }]}>{fmtAmount(totalEntradas)}</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>Saídas</Text>
+                  <Text style={[styles.statValue, { color: Glass.expense }]}>{fmtAmount(totalSaidas)}</Text>
+                </View>
+              </View>
             </View>
-          </View>
-        </SummaryCard>
+          </SummaryCard>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Hoje, 24 de Outubro</Text>
-            <Text style={styles.sectionTotal}>R$ 142,50</Text>
-          </View>
+          {entradas.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Entradas</Text>
+                <Text style={[styles.sectionTotal, { color: Glass.income }]}>{fmtAmount(totalEntradas)}</Text>
+              </View>
+              {entradas.map((t) => (
+                <TransactionRow
+                  key={t.id}
+                  transaction={t}
+                  onEdit={() => router.push({ pathname: "/edit", params: { id: t.id, user: USER } } as Href)}
+                  onDelete={() => handleDelete(t.id)}
+                  onUpdateStatus={(s) => handleUpdateStatus(t.id, s)}
+                />
+              ))}
+            </View>
+          )}
 
-          <ExpenseRow
-            icon="restaurant"
-            iconBg="#EFE7FF"
-            iconColor="#6200EE"
-            title="Almoco Executivo"
-            category="Alimentacao"
-            value="R$ 45,00"
-            tag="Credito"
-          />
-          <ExpenseRow
-            icon="directions-car"
-            iconBg="#FDECF3"
-            iconColor="#A6417E"
-            title="Combustivel Shell"
-            category="Transporte"
-            value="R$ 97,50"
-            tag="Debito"
-          />
-        </View>
+          {saidas.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Saídas</Text>
+                <Text style={[styles.sectionTotal, { color: Glass.expense }]}>{fmtAmount(totalSaidas)}</Text>
+              </View>
+              {saidas.map((t) => (
+                <TransactionRow
+                  key={t.id}
+                  transaction={t}
+                  onEdit={() => router.push({ pathname: "/edit", params: { id: t.id, user: USER } } as Href)}
+                  onDelete={() => handleDelete(t.id)}
+                  onUpdateStatus={(s) => handleUpdateStatus(t.id, s)}
+                />
+              ))}
+            </View>
+          )}
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Ontem, 23 de Outubro</Text>
-            <Text style={styles.sectionTotal}>R$ 890,00</Text>
-          </View>
-
-          <ExpenseRow
-            icon="shopping-bag"
-            iconBg="#EEE6FF"
-            iconColor="#6200EE"
-            title="Supermercado Pao de Acucar"
-            category="Compras"
-            value="R$ 890,00"
-            tag="Credito"
-          />
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>21 de Outubro</Text>
-            <Text style={styles.sectionTotal}>R$ 15,90</Text>
-          </View>
-
-          <ExpenseRow
-            icon="subscriptions"
-            iconBg="#ECEFF9"
-            iconColor="#4A5A85"
-            title="Spotify Premium"
-            category="Lazer"
-            value="R$ 15,90"
-            tag="Fixo"
-          />
-        </View>
-      </ScrollView>
+          {transactions.length === 0 && (
+            <Text style={styles.empty}>Nenhuma transação neste mês.</Text>
+          )}
+        </ScrollView>
+      )}
 
       <View style={styles.bottomNavWrap}>
         <Pressable style={styles.navButtonActive}>
-          <MaterialIcons name="home" size={22} color="#4800B2" />
+          <MaterialIcons name="home" size={22} color={Glass.accent} />
           <Text style={styles.navTextActive}>Inicio</Text>
         </Pressable>
-
         <Pressable
-          style={styles.navButton}
-          onPress={() => router.push("/create" as Href)}
+          style={({ pressed }) => [styles.navButton, pressed && { opacity: 0.6 }]}
+          onPress={() => router.push({ pathname: "/create", params: { user: USER } } as Href)}
         >
-          <MaterialIcons name="add-circle" size={22} color="#8E8A99" />
+          <MaterialIcons name="add-circle" size={22} color={Glass.textSecondary} />
           <Text style={styles.navText}>Adicionar</Text>
         </Pressable>
       </View>
@@ -167,260 +193,218 @@ export default function HomeScreen() {
   );
 }
 
-type ExpenseRowProps = {
-  icon: React.ComponentProps<typeof MaterialIcons>["name"];
-  iconBg: string;
-  iconColor: string;
-  title: string;
-  category: string;
-  value: string;
-  tag: string;
+const STATUS_LABELS: Record<TransactionStatus, string> = {
+  pendente: "Pendente",
+  pago: "Pago",
+  recebido: "Recebido",
 };
 
-function ExpenseRow({
-  icon,
-  iconBg,
-  iconColor,
-  title,
-  category,
-  value,
-  tag,
-}: ExpenseRowProps) {
-  const router = useRouter();
+const STATUS_COLORS: Record<TransactionStatus, string> = {
+  pendente: "#FBBF24",
+  pago: "#34D399",
+  recebido: "#60A5FA",
+};
+
+function TransactionRow({
+  transaction: t,
+  onEdit,
+  onDelete,
+  onUpdateStatus,
+}: {
+  transaction: Transaction;
+  onEdit: () => void;
+  onDelete: () => void;
+  onUpdateStatus: (s: TransactionStatus) => void;
+}) {
+  const nextStatus: TransactionStatus =
+    t.type === "entrada"
+      ? t.status === "recebido" ? "pendente" : "recebido"
+      : t.status === "pago" ? "pendente" : "pago";
+
   return (
     <Pressable
-      onPress={() => router.push({ pathname: "/edit", params: { title, category, value, tag } } as Href)}
-      style={({ pressed }) => [styles.expenseRow, pressed && styles.rowPressed]}
+      onPress={onEdit}
+      style={({ pressed }) => [styles.expenseRow, pressed && { opacity: 0.7 }]}
     >
       <View style={styles.expenseLeft}>
-        <View style={[styles.expenseIconWrap, { backgroundColor: iconBg }]}>
-          <MaterialIcons name={icon} size={21} color={iconColor} />
+        <View style={[styles.expenseIconWrap, {
+          backgroundColor: t.type === "entrada" ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)",
+          borderColor: t.type === "entrada" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)",
+        }]}>
+          <MaterialIcons
+            name={t.type === "entrada" ? "arrow-downward" : "arrow-upward"}
+            size={20}
+            color={t.type === "entrada" ? Glass.income : Glass.expense}
+          />
         </View>
-        <View>
-          <Text style={styles.expenseTitle}>{title}</Text>
-          <Text style={styles.expenseCategory}>{category}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.expenseTitle} numberOfLines={1}>{t.description}</Text>
+          <Text style={styles.expenseCategory}>{t.month}</Text>
         </View>
       </View>
 
       <View style={styles.expenseRight}>
-        <Text style={styles.expenseValue}>{value}</Text>
-        <Text style={styles.expenseTag}>{tag}</Text>
+        <Text style={[styles.expenseValue, { color: t.type === "entrada" ? Glass.income : Glass.expense }]}>
+          {t.type === "entrada" ? "+" : "-"}{fmtAmount(t.amount)}
+        </Text>
+        <View style={styles.rowActions}>
+          <Pressable
+            onPress={(e) => { e.stopPropagation(); onUpdateStatus(nextStatus); }}
+            style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[t.status] + "22", borderColor: STATUS_COLORS[t.status] + "44" }]}
+          >
+            <Text style={[styles.statusText, { color: STATUS_COLORS[t.status] }]}>
+              {STATUS_LABELS[t.status]}
+            </Text>
+          </Pressable>
+          <Pressable onPress={(e) => { e.stopPropagation(); onDelete(); }} style={styles.deleteBtn}>
+            <MaterialIcons name="delete-outline" size={18} color={Glass.expense} />
+          </Pressable>
+        </View>
       </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#FAFAFA",
+  screen: { flex: 1, backgroundColor: Glass.bgDark },
+  orb1: {
+    position: "absolute",
+    width: 300,
+    height: 300,
+    borderRadius: 999,
+    backgroundColor: "rgba(124,58,237,0.3)",
+    top: -80,
+    right: -60,
+  },
+  orb2: {
+    position: "absolute",
+    width: 240,
+    height: 240,
+    borderRadius: 999,
+    backgroundColor: "rgba(52,211,153,0.1)",
+    top: 300,
+    left: -80,
+  },
+  orb3: {
+    position: "absolute",
+    width: 200,
+    height: 200,
+    borderRadius: 999,
+    backgroundColor: "rgba(167,139,250,0.12)",
+    bottom: 100,
+    right: -40,
   },
   contentContainer: {
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 130,
-    gap: 26,
-  },
-  summaryCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 22,
-    overflow: "hidden",
-  },
-  summaryGlow: {
-    position: "absolute",
-    width: 220,
-    height: 220,
-    borderRadius: 999,
-    backgroundColor: "#EADDFF",
-    opacity: 0.35,
-    top: -90,
-    right: -70,
-  },
-  summaryMain: {
-    gap: 18,
-  },
-  summaryLeft: {
-    gap: 10,
+    gap: 24,
   },
   periodBar: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 12,
     paddingTop: 50,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(15,10,30,0.6)",
     borderBottomWidth: 1,
-    borderBottomColor: "#EFE8F4",
+    borderBottomColor: Glass.border,
   },
-  dateBtn: {
-    backgroundColor: "#F3EDF7",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  arrowBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: Glass.surface,
+    borderWidth: 1,
+    borderColor: Glass.border,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  dateBtnText: {
-    color: "#4800B2",
-    fontSize: 13,
-    fontWeight: "600",
+  monthText: {
+    color: Glass.textPrimary,
+    fontSize: 15,
+    fontWeight: "700",
+    textTransform: "capitalize",
   },
-  dateSep: {
-    color: "#625B71",
-    fontSize: 14,
-  },
+  summaryMain: { gap: 18 },
+  summaryLeft: { gap: 6 },
   summaryCaption: {
-    color: "#625B71",
+    color: Glass.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 1,
     fontSize: 11,
     fontWeight: "600",
   },
-  summaryValueRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 2,
-  },
-  summaryValueMain: {
-    color: "#6200EE",
-    fontSize: 39,
-    fontWeight: "800",
-    letterSpacing: -0.8,
-  },
-  summaryValueCents: {
-    color: "#6200EE",
-    fontSize: 23,
-    fontWeight: "800",
-    marginBottom: 4,
-  },
-  progressWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  progressTrack: {
-    flex: 1,
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: "#EDE6F6",
-    overflow: "hidden",
-  },
-  progressFill: {
-    width: "72%",
-    height: "100%",
-    backgroundColor: "#6200EE",
-  },
-  progressText: {
-    color: "#49454F",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  summaryStats: {
-    flexDirection: "row",
-    gap: 10,
-  },
+  summaryValue: { fontSize: 36, fontWeight: "800", letterSpacing: -0.8 },
+  summaryStats: { flexDirection: "row", gap: 12 },
   statCard: {
     flex: 1,
-    backgroundColor: "#F7F2FA",
-    borderRadius: 12,
-    padding: 12,
-    gap: 3,
+    backgroundColor: Glass.surfaceInput,
+    borderRadius: 16,
+    padding: 14,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: Glass.border,
   },
-  statLabel: {
-    color: "#625B71",
-    fontSize: 11,
-  },
-  statValue: {
-    color: "#1D1B20",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  statValuePositive: {
-    color: "#7D5260",
-  },
-  section: {
-    gap: 10,
-  },
+  statLabel: { color: Glass.textSecondary, fontSize: 11, fontWeight: "600" },
+  statValue: { fontSize: 15, fontWeight: "700" },
+  section: { gap: 10 },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 2,
   },
-  sectionTitle: {
-    color: "#1D1B20",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  sectionTotal: {
-    color: "#625B71",
-    fontSize: 13,
-    fontWeight: "600",
-  },
+  sectionTitle: { color: Glass.textPrimary, fontSize: 18, fontWeight: "700" },
+  sectionTotal: { fontSize: 13, fontWeight: "600" },
   expenseRow: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
+    backgroundColor: Glass.surface,
+    borderRadius: 18,
     padding: 14,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: Glass.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  rowPressed: {
-    opacity: 0.8,
-  },
-  expenseLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
+  expenseLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
   expenseIconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 999,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
   },
-  expenseTitle: {
-    color: "#1D1B20",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  expenseCategory: {
-    color: "#625B71",
-    fontSize: 13,
-    marginTop: 2,
-  },
-  expenseRight: {
-    alignItems: "flex-end",
-    gap: 5,
-    marginLeft: 10,
-  },
-  expenseValue: {
-    color: "#1D1B20",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  expenseTag: {
-    backgroundColor: "#E8DEF8",
-    color: "#49454F",
-    fontSize: 10,
-    fontWeight: "700",
-    textTransform: "uppercase",
+  expenseTitle: { color: Glass.textPrimary, fontSize: 15, fontWeight: "600" },
+  expenseCategory: { color: Glass.textSecondary, fontSize: 12, marginTop: 2 },
+  expenseRight: { alignItems: "flex-end", gap: 6, marginLeft: 10 },
+  expenseValue: { fontSize: 14, fontWeight: "700" },
+  rowActions: { flexDirection: "row", alignItems: "center", gap: 6 },
+  statusBadge: {
     borderRadius: 999,
-    overflow: "hidden",
     paddingHorizontal: 8,
     paddingVertical: 3,
+    borderWidth: 1,
   },
+  statusText: { fontSize: 10, fontWeight: "700", textTransform: "uppercase" },
+  deleteBtn: { padding: 2 },
+  empty: { textAlign: "center", color: Glass.textSecondary, fontSize: 14, marginTop: 40 },
   bottomNavWrap: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(255,255,255,0.94)",
+    backgroundColor: "rgba(15,10,30,0.85)",
     borderTopWidth: 1,
-    borderTopColor: "#EFE8F4",
+    borderTopColor: Glass.border,
     paddingTop: 12,
     paddingBottom: 24,
     flexDirection: "row",
@@ -441,16 +425,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 10,
     gap: 2,
-    backgroundColor: "#F3EDF7",
+    backgroundColor: Glass.surface,
+    borderWidth: 1,
+    borderColor: Glass.border,
   },
-  navText: {
-    color: "#8E8A99",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  navTextActive: {
-    color: "#4800B2",
-    fontSize: 12,
-    fontWeight: "700",
-  },
+  navText: { color: Glass.textSecondary, fontSize: 12, fontWeight: "600" },
+  navTextActive: { color: Glass.accent, fontSize: 12, fontWeight: "700" },
 });

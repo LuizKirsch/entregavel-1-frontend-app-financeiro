@@ -1,8 +1,3 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 import { Platform } from 'react-native';
 
 const tintColorLight = '#0a7ea4';
@@ -25,6 +20,29 @@ export const Colors = {
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
   },
+};
+
+// Glassmorfismo
+export const Glass = {
+  // Cores de fundo (gradiente simulado com camadas)
+  bgDark: '#0F0A1E',
+  bgMid: '#1A0F3C',
+  // Superfície glass
+  surface: 'rgba(255,255,255,0.08)',
+  surfaceStrong: 'rgba(255,255,255,0.13)',
+  surfaceInput: 'rgba(255,255,255,0.06)',
+  // Bordas
+  border: 'rgba(255,255,255,0.18)',
+  borderStrong: 'rgba(255,255,255,0.28)',
+  // Texto
+  textPrimary: '#F0EEFF',
+  textSecondary: 'rgba(240,238,255,0.55)',
+  // Accent
+  accent: '#A78BFA',
+  accentDark: '#7C3AED',
+  // Status
+  income: '#34D399',
+  expense: '#F87171',
 };
 
 export const Fonts = Platform.select({

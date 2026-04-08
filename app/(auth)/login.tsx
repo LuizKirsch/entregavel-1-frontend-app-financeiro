@@ -1,4 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
+import { Glass } from "@/constants/theme";
 import { type Href, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
@@ -7,18 +8,19 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.screen}>
+      {/* Background orbs */}
+      <View style={styles.orb1} />
+      <View style={styles.orb2} />
+      <View style={styles.orb3} />
+
       <View style={styles.container}>
         <View style={styles.brandSection}>
           <View style={styles.logoBox}>
-            <MaterialIcons
-              name="account-balance-wallet"
-              size={36}
-              color="#FFFFFF"
-            />
+            <MaterialIcons name="account-balance-wallet" size={36} color={Glass.accent} />
           </View>
-          <Text style={styles.brandTitle}>Controle de Despesas</Text>
+          <Text style={styles.brandTitle}>Controle de{"\n"}Despesas</Text>
           <Text style={styles.brandSubtitle}>
-            Sua seguranca financeira em primeiro lugar.
+            Sua segurança financeira em primeiro lugar.
           </Text>
         </View>
 
@@ -28,7 +30,7 @@ export default function LoginScreen() {
             <TextInput
               style={styles.input}
               placeholder="nome@exemplo.com"
-              placeholderTextColor="#7A7488"
+              placeholderTextColor={Glass.textSecondary}
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -43,24 +45,19 @@ export default function LoginScreen() {
             </View>
             <TextInput
               style={styles.input}
-              placeholder="********"
-              placeholderTextColor="#7A7488"
+              placeholder="••••••••"
+              placeholderTextColor={Glass.textSecondary}
               secureTextEntry
             />
           </View>
 
-          <View style={styles.actionsBlock}>
-            <Pressable
-              onPress={() => router.push("/home" as Href)}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                pressed && styles.buttonPressed,
-              ]}
-            >
-              <Text style={styles.primaryButtonText}>Entrar</Text>
-              <MaterialIcons name="arrow-forward" size={20} color="#FFFFFF" />
-            </Pressable>
-          </View>
+          <Pressable
+            onPress={() => router.push("/home" as Href)}
+            style={({ pressed }) => [styles.primaryButton, pressed && { opacity: 0.8 }]}
+          >
+            <Text style={styles.primaryButtonText}>Entrar</Text>
+            <MaterialIcons name="arrow-forward" size={20} color="#FFF" />
+          </Pressable>
         </View>
       </View>
     </View>
@@ -68,137 +65,122 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
+  screen: { flex: 1, backgroundColor: Glass.bgDark },
+  orb1: {
+    position: "absolute",
+    width: 320,
+    height: 320,
+    borderRadius: 999,
+    backgroundColor: "rgba(124,58,237,0.35)",
+    top: -100,
+    left: -80,
+  },
+  orb2: {
+    position: "absolute",
+    width: 260,
+    height: 260,
+    borderRadius: 999,
+    backgroundColor: "rgba(167,139,250,0.2)",
+    top: 180,
+    right: -100,
+  },
+  orb3: {
+    position: "absolute",
+    width: 200,
+    height: 200,
+    borderRadius: 999,
+    backgroundColor: "rgba(52,211,153,0.12)",
+    bottom: 60,
+    left: 40,
   },
   container: {
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 28,
     paddingVertical: 32,
   },
-  brandSection: {
-    alignItems: "center",
-    marginBottom: 48,
-  },
+  brandSection: { alignItems: "center", marginBottom: 44 },
   logoBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 16,
-    backgroundColor: "#4800B2",
+    width: 84,
+    height: 84,
+    borderRadius: 24,
+    backgroundColor: Glass.surface,
+    borderWidth: 1,
+    borderColor: Glass.borderStrong,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: 22,
+    shadowColor: Glass.accentDark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 10,
   },
   brandTitle: {
-    color: "#4800B2",
-    fontSize: 34,
+    color: Glass.textPrimary,
+    fontSize: 32,
     fontWeight: "800",
-    letterSpacing: -0.8,
+    letterSpacing: -0.5,
     textAlign: "center",
     marginBottom: 8,
   },
   brandSubtitle: {
-    color: "#494456",
+    color: Glass.textSecondary,
     fontSize: 14,
     fontWeight: "500",
     textAlign: "center",
   },
   formCard: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 4,
+    backgroundColor: Glass.surface,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: Glass.border,
+    padding: 24,
+    gap: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 12,
   },
-  inputBlock: {
-    marginBottom: 22,
-  },
+  inputBlock: { gap: 8 },
   label: {
-    color: "#494456",
-    fontSize: 12,
+    color: Glass.textSecondary,
+    fontSize: 11,
     fontWeight: "700",
-    letterSpacing: 1.2,
-    marginBottom: 8,
-    marginLeft: 4,
+    letterSpacing: 1.4,
   },
   passwordHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  forgotText: {
-    color: "#4800B2",
-    fontSize: 13,
-    fontWeight: "700",
-  },
+  forgotText: { color: Glass.accent, fontSize: 13, fontWeight: "700" },
   input: {
-    backgroundColor: "#F3F3F4",
-    color: "#1A1C1C",
+    backgroundColor: Glass.surfaceInput,
+    color: Glass.textPrimary,
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 15,
     fontSize: 15,
-  },
-  actionsBlock: {
-    marginTop: 8,
+    borderWidth: 1,
+    borderColor: Glass.border,
   },
   primaryButton: {
-    backgroundColor: "#4800B2",
-    borderRadius: 14,
+    backgroundColor: Glass.accentDark,
+    borderRadius: 16,
     minHeight: 56,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
     gap: 8,
+    borderWidth: 1,
+    borderColor: Glass.accent + "55",
+    shadowColor: Glass.accentDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 14,
+    elevation: 10,
   },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "800",
-  },
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E2E2E2",
-  },
-  dividerText: {
-    marginHorizontal: 12,
-    color: "#7A7488",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.8,
-  },
-  secondaryButton: {
-    backgroundColor: "#F3F3F4",
-    borderRadius: 14,
-    minHeight: 56,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  secondaryButtonText: {
-    color: "#4800B2",
-    fontSize: 17,
-    fontWeight: "800",
-  },
-  buttonPressed: {
-    opacity: 0.86,
-  },
-  footer: {
-    marginTop: 34,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  },
-  footerText: {
-    color: "#7A7488",
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 1.4,
-    textTransform: "uppercase",
-  },
+  primaryButtonText: { color: "#FFF", fontSize: 17, fontWeight: "800" },
 });
