@@ -15,10 +15,10 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack
-        initialRouteName="(auth)/login"
+        initialRouteName="(main)/home"
         screenOptions={{ headerShown: false }}
       >
-        <Stack.Screen name="(auth)/login" options={{ title: "Login" }} />
+        {/* <Stack.Screen name="(auth)/login" options={{ title: "Login" }} /> */}
         <Stack.Screen name="(main)/home" options={{ title: "Home" }} />
         <Stack.Screen name="(main)/create" options={{ title: "Create" }} />
         <Stack.Screen name="(main)/edit" options={{ title: "Edit" }} />
